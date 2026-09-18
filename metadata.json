@@ -1,0 +1,6 @@
+{
+  "name": "Калькулятор доставки из Китая",
+  "description": "Расчет полной себестоимости партии, таможенных платежей (пошлина, НДС, сборы 2026), фрахта и логистики из Китая на основе предложений поставщиков.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
