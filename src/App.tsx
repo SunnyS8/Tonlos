@@ -25,6 +25,8 @@ import { CurrencyRateModal } from './components/CurrencyRateModal';
 import { PresetManagerModal } from './components/PresetManagerModal';
 import { LogisticsComparisonView } from './components/logistics/LogisticsComparisonView';
 import { ExportLogisticsModal } from './components/logistics/ExportLogisticsModal';
+import { AddQuoteModal } from './components/logistics/AddQuoteModal';
+import { HelpManualModal } from './components/HelpManualModal';
 import { PRESETS, CalculationPreset } from './data/presets';
 import { getAllPresetsList } from './utils/presetStorage';
 import { DEFAULT_FORWARDER_QUOTES } from './data/logisticsQuotes';
@@ -33,6 +35,7 @@ import {
   convertQuoteToLogisticsSettings,
   getStoredCustomQuotes,
   saveStoredCustomQuotes,
+  parseLogisticsExcelFile,
 } from './utils/logisticsCalculator';
 import {
   CurrencyRates,
@@ -92,6 +95,8 @@ export default function App() {
   const [isLogisticsExportModalOpen, setIsLogisticsExportModalOpen] = useState(false);
   const [isRateModalOpen, setIsRateModalOpen] = useState(false);
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false);
 
   // Active applied quote object
   const activeQuote = quotes.find((q) => q.id === activeQuoteId);
@@ -111,6 +116,29 @@ export default function App() {
       saveStoredCustomQuotes(customOnly);
       return next;
     });
+  };
+
+  // Add new quote and automatically apply it
+  const handleAddNewQuote = (newQuote: ForwarderQuote) => {
+    handleAddQuote(newQuote);
+    handleApplyQuote(newQuote);
+  };
+
+  // Upload Excel file with quotes directly from logistics panel
+  const handleUploadExcelQuotes = async (file: File) => {
+    try {
+      const imported = await parseLogisticsExcelFile(file);
+      if (imported.length > 0) {
+        handleImportQuotes(imported);
+        handleApplyQuote(imported[0]);
+        alert(`Успешно загружено ${imported.length} коммерческих предложений из файла "${file.name}"! Ставка "${imported[0].forwarderName}" применена к расчету.`);
+      } else {
+        alert('Не удалось автоматически распознать ставки в файле. Пожалуйста, проверьте файл или введите ставку вручную.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка при чтении файла Excel.');
+    }
   };
 
   // Update existing quote
@@ -357,6 +385,8 @@ export default function App() {
                   ? `${activeQuote.forwarderName} (${activeQuote.destination})`
                   : undefined
               }
+              onAddNewQuote={() => setIsAddQuoteModalOpen(true)}
+              onUploadExcelQuotes={handleUploadExcelQuotes}
             />
 
             {/* Calculation Summary & Unit Economics */}
@@ -483,6 +513,17 @@ export default function App() {
         currentRates={rates}
         currentLogistics={logistics}
         currentVatRate={vatRatePercent}
+      />
+
+      <AddQuoteModal
+        isOpen={isAddQuoteModalOpen}
+        onClose={() => setIsAddQuoteModalOpen(false)}
+        onSaveQuote={handleAddNewQuote}
+      />
+
+      <HelpManualModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
       />
     </div>
   );

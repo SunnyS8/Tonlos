@@ -190,21 +190,128 @@ export async function parseLogisticsExcelFile(file: File): Promise<ForwarderQuot
   const workbook = XLSX.read(buffer, { type: 'array' });
   const results: ForwarderQuote[] = [];
 
+  const parseNum = (val: any) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const clean = String(val).replace(/[^\d.-]/g, '');
+    return parseFloat(clean) || 0;
+  };
+
   workbook.SheetNames.forEach((sheetName) => {
     const ws = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
     if (!rows || rows.length === 0) return;
 
-    // Конкатенируем текст для поиска ключевых значений
+    // 1. Попробуем найти табличный формат со строкой заголовков
+    let headerRowIdx = -1;
+    const colMap: Record<string, number> = {};
+
+    for (let r = 0; r < Math.min(rows.length, 12); r++) {
+      const row = rows[r];
+      if (!Array.isArray(row)) continue;
+      const rowStr = row.map((c) => String(c || '').toLowerCase()).join(' ');
+      if (
+        (rowStr.includes('экспедитор') || rowStr.includes('перевозчик') || rowStr.includes('forwarder')) &&
+        (rowStr.includes('фрахт') || rowStr.includes('freight') || rowStr.includes('склад') || rowStr.includes('итог'))
+      ) {
+        headerRowIdx = r;
+        row.forEach((cell, idx) => {
+          const c = String(cell || '').toLowerCase().trim();
+          if (c.includes('экспедитор') || c.includes('перевозчик') || c.includes('компания') || c === 'forwarder') colMap.forwarder = idx;
+          else if (c.includes('склад') || c.includes('назначен') || c.includes('город')) colMap.destination = idx;
+          else if (c.includes('морской фрахт') || (c.includes('фрахт') && c.includes('$')) || c === 'фрахт ($)' || c.includes('ocean')) colMap.freightUsd = idx;
+          else if (c.includes('жд') || c.includes('ж/д') || c.includes('ж.д') || c.includes('rail')) colMap.rail = idx;
+          else if (c.includes('авто') || c.includes('вывоз') || c.includes('доставк') || c.includes('truck')) colMap.truck = idx;
+          else if (c.includes('срок') || c.includes('дней') || c.includes('дн') || c.includes('transit')) colMap.days = idx;
+          else if (c.includes('маршрут') || c.includes('порт') || c.includes('route')) colMap.route = idx;
+          else if (c.includes('примеч') || c.includes('услов') || c.includes('коммент')) colMap.comments = idx;
+        });
+        break;
+      }
+    }
+
+    if (headerRowIdx !== -1 && colMap.forwarder !== undefined) {
+      // Парсим строки таблицы
+      for (let r = headerRowIdx + 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!Array.isArray(row) || row.length === 0) continue;
+        const name = String(row[colMap.forwarder] || '').trim();
+        if (!name || name === '-' || /^\d+$/.test(name)) continue;
+
+        const destStr = colMap.destination !== undefined ? String(row[colMap.destination] || '') : '';
+        const destination: DestinationWarehouse = /став/i.test(destStr) ? 'Ставрополь' : 'Серпухов';
+
+        const freightUsd = colMap.freightUsd !== undefined ? parseNum(row[colMap.freightUsd]) : 4500;
+        const railRub = colMap.rail !== undefined ? parseNum(row[colMap.rail]) : 0;
+        const truckRub = colMap.truck !== undefined ? parseNum(row[colMap.truck]) : 78000;
+
+        let daysMin = 30;
+        let daysMax = 42;
+        if (colMap.days !== undefined) {
+          const daysStr = String(row[colMap.days] || '');
+          const dMatch = daysStr.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})/);
+          if (dMatch) {
+            daysMin = parseInt(dMatch[1]);
+            daysMax = parseInt(dMatch[2]);
+          } else {
+            const singleD = parseNum(daysStr);
+            if (singleD > 0) {
+              daysMin = singleD;
+              daysMax = singleD + 7;
+            }
+          }
+        }
+
+        const routeStr = colMap.route !== undefined ? String(row[colMap.route] || '') : '';
+        let routeType: RouteType = 'sea_vvo_rail_truck';
+        if (/новоросс/i.test(routeStr) || /deep/i.test(routeStr)) {
+          routeType = 'deep_sea_novorossiysk';
+        } else if (/прям/i.test(routeStr) || /поезд/i.test(routeStr) || /direct/i.test(routeStr)) {
+          routeType = 'direct_rail_truck';
+        }
+
+        results.push({
+          id: `imported_${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${r}`,
+          forwarderName: name,
+          destination,
+          originPort: /циндао/i.test(routeStr) ? 'Циндао' : 'Шанхай',
+          routeType,
+          transitHub: routeType === 'deep_sea_novorossiysk' ? 'Новороссийск' : 'Владивосток',
+          routeDescription: routeStr || `Импортировано из ${file.name}`,
+          containerSize: '40HC',
+          weightTons: 26,
+          maxWeightTons: 20,
+          overweightRateRub: 2000,
+          oceanFreight: { amount: freightUsd, currency: 'USD' },
+          railFreight: { amount: railRub, currency: 'RUB' },
+          truckDelivery: { amount: truckRub, currency: 'RUB' },
+          forwarderFee: { amount: 15000, currency: 'RUB' },
+          terminalExpenses: { amount: 35000, currency: 'RUB' },
+          vatRate: 22,
+          transitDaysMin: daysMin,
+          transitDaysMax: daysMax,
+          validUntil: '2026-10-31',
+          comments: colMap.comments !== undefined ? String(row[colMap.comments] || '') : `Из файла ${file.name}`,
+        });
+      }
+      return;
+    }
+
+    // 2. Иначе парсим как текстовое КП / карточку (неструктурированный лист)
     const textBlob = rows.map((r) => r.filter(Boolean).join(' ')).join('\n');
     const lowerBlob = textBlob.toLowerCase();
 
     // Определение экспедитора из имени файла / листа
-    let forwarderName = 'Перевозчик';
+    let forwarderName = 'Новый перевозчик';
     if (/галеос/i.test(file.name) || /галеос/i.test(sheetName)) forwarderName = 'Галеос';
     else if (/дельпорте/i.test(file.name) || /дельпорте/i.test(sheetName)) forwarderName = 'Дельпорте';
     else if (/игл/i.test(file.name) || /игл/i.test(sheetName)) forwarderName = 'ИГЛ';
     else if (/циндао/i.test(file.name) || /циндао/i.test(sheetName)) forwarderName = 'порт Циндао';
+    else {
+      // Попытка найти название компании
+      const compMatch = textBlob.match(/(?:ооо|зао|пао|тк|экспедитор|компания)\s*["«']?([А-Яа-яA-Za-z0-9_-]{3,20})/i);
+      if (compMatch) forwarderName = compMatch[1];
+    }
 
     // Определение направления
     const destination: DestinationWarehouse =
@@ -219,13 +326,11 @@ export async function parseLogisticsExcelFile(file: File): Promise<ForwarderQuot
     }
 
     // Извлечение чисел
-    const freightMatch = textBlob.match(/(?:фрахт|fob|usd|фоб)[^\d]*(\d[\d\s]*\d)/i);
-    const railMatch = textBlob.match(/(?:жд|ж\/д|ж\.д)[^\d]*(\d[\d\s]*\d)/i);
-    const truckMatch = textBlob.match(/(?:авто|вывоз|доставк)[^\d]*(\d[\d\s]*\d)/i);
-    const feeMatch = textBlob.match(/(?:вознаграж|экспедир)[^\d]*(\d[\d\s]*\d)/i);
+    const freightMatch = textBlob.match(/(?:фрахт|fob|usd|фоб|ocean)[^\d]*(\d[\d\s]*\d)/i);
+    const railMatch = textBlob.match(/(?:жд|ж\/д|ж\.д|rail)[^\d]*(\d[\d\s]*\d)/i);
+    const truckMatch = textBlob.match(/(?:авто|вывоз|доставк|truck)[^\d]*(\d[\d\s]*\d)/i);
+    const feeMatch = textBlob.match(/(?:вознаграж|экспедир|fee)[^\d]*(\d[\d\s]*\d)/i);
     const daysMatch = textBlob.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s*(?:дн|сут|дней)/i);
-
-    const parseNum = (str?: string) => (str ? parseFloat(str.replace(/\s+/g, '')) || 0 : 0);
 
     const freightUsd = freightMatch ? parseNum(freightMatch[1]) : 4500;
     const railRub = railMatch ? parseNum(railMatch[1]) : 0;

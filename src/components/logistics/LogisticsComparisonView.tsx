@@ -274,6 +274,52 @@ export const LogisticsComparisonView: React.FC<Props> = ({
         <RouteVisualMap />
       ) : (
         <div className="space-y-5">
+          {/* Banner: Upload & Add Commercial Proposals (КП) */}
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50/60 to-white p-4 sm:p-5 rounded-2xl border border-blue-200/90 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <Upload className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>Загрузка новых коммерческих предложений (КП) перевозчиков</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                    Excel / Вручную
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                  Получили новое КП от экспедитора? Загрузите файл Excel (<code className="font-mono text-blue-700 bg-white px-1 py-0.5 rounded border border-blue-200">.xlsx</code>) или введите ставки вручную. Система автоматически распознает составляющие (фрахт $, Ж/Д ₽, автовывоз ₽) и пересчитает себестоимость партии.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-stretch sm:self-center">
+              <button
+                onClick={() => {
+                  setEditingQuote(null);
+                  setIsAddModalOpen(true);
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Добавить ставку</span>
+              </button>
+
+              <label className="px-4 py-2 text-xs font-bold text-slate-800 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs flex-1 sm:flex-initial">
+                <Upload className="w-4 h-4 text-blue-600" />
+                <span>Загрузить файл Excel</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
           {/* Controls Bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">

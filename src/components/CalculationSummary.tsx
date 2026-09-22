@@ -5,13 +5,13 @@ import {
   TrendingDown,
   Percent,
   CheckCircle2,
-  PieChart,
   ArrowRight,
   ShieldAlert,
 } from 'lucide-react';
 import { CalculationResult, CurrencyRates } from '../types';
 import { formatMoney, formatNumber } from '../utils/calculator';
 import { formatYMDToRu } from '../utils/cbrService';
+import { CostStructurePieWidget } from './CostStructurePieWidget';
 
 interface CalculationSummaryProps {
   result: CalculationResult;
@@ -26,16 +26,6 @@ export const CalculationSummary: React.FC<CalculationSummaryProps> = ({
   vatRatePercent,
   rates,
 }) => {
-  // Share percentages for visual chart
-  const grandTotal = result.grandTotalRub || 1;
-  const goodsShare = ((result.invoiceTotalRub / grandTotal) * 100).toFixed(1);
-  const customsShare = ((result.totalCustomsPaymentsRub / grandTotal) * 100).toFixed(1);
-  const logisticsShare = (
-    ((result.freightRub + result.inlandDeliveryRub + result.otherExpensesRub + result.insuranceRub) /
-      grandTotal) *
-    100
-  ).toFixed(1);
-
   const hasSavings = result.savingsTotalRub !== undefined && result.savingsTotalRub > 0;
 
   return (
@@ -258,47 +248,13 @@ export const CalculationSummary: React.FC<CalculationSummaryProps> = ({
         </div>
       )}
 
-      {/* Cost Structure Progress Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
-          <span className="flex items-center gap-1.5">
-            <PieChart className="w-3.5 h-3.5 text-blue-500" />
-            Структура расходов партии:
-          </span>
-          <span className="text-slate-500 text-[11px]">100% себестоимости под ключ</span>
-        </div>
-        <div className="w-full h-4 bg-slate-100 rounded-full flex overflow-hidden">
-          <div
-            style={{ width: `${goodsShare}%` }}
-            className="bg-blue-600 h-full transition-all duration-500"
-            title={`Товар (инвойс): ${goodsShare}%`}
-          />
-          <div
-            style={{ width: `${customsShare}%` }}
-            className="bg-indigo-600 h-full transition-all duration-500"
-            title={`Таможня (пошлина, сбор, НДС): ${customsShare}%`}
-          />
-          <div
-            style={{ width: `${logisticsShare}%` }}
-            className="bg-amber-500 h-full transition-all duration-500"
-            title={`Логистика и прочее: ${logisticsShare}%`}
-          />
-        </div>
-        <div className="flex flex-wrap items-center justify-between text-xs text-slate-600 mt-2.5">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-blue-600 inline-block" />
-            <span>Товар: <strong className="text-slate-800">{goodsShare}%</strong> ({formatMoney(result.invoiceTotalRub, 'RUB', 0)})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-indigo-600 inline-block" />
-            <span>Таможня (с НДС): <strong className="text-slate-800">{customsShare}%</strong> ({formatMoney(result.totalCustomsPaymentsRub, 'RUB', 0)})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-amber-500 inline-block" />
-            <span>Фрахт и логистика: <strong className="text-slate-800">{logisticsShare}%</strong> ({formatMoney(result.freightRub + result.inlandDeliveryRub + result.otherExpensesRub + result.insuranceRub, 'RUB', 0)})</span>
-          </div>
-        </div>
-      </div>
+      {/* Cost Structure Pie / Donut Widget */}
+      <CostStructurePieWidget
+        result={result}
+        vatRatePercent={vatRatePercent}
+        rates={rates}
+        isSpecMode={isSpecMode}
+      />
 
       {/* Comprehensive Detailed Breakdown Table (Matching CSV Structure) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
