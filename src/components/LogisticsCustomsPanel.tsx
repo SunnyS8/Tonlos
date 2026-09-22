@@ -20,6 +20,8 @@ interface LogisticsCustomsPanelProps {
   onOpenTariffModal: () => void;
   activeHsCode?: string;
   onHsCodeChange?: (code: string, duty: number) => void;
+  onOpenLogisticsComparison?: () => void;
+  activeQuoteName?: string;
 }
 
 export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
@@ -31,21 +33,41 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
   onOpenTariffModal,
   activeHsCode,
   onHsCodeChange,
+  onOpenLogisticsComparison,
+  activeQuoteName,
 }) => {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-6">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
             <Anchor className="w-4 h-4 text-blue-600" />
             <h2 className="text-sm font-bold text-slate-900">
               Логистика, таможенные платежи и сборы
             </h2>
+            {activeQuoteName && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                <Truck className="w-3 h-3" />
+                {activeQuoteName}
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500">
             База начисления таможенной стоимости = фактурная стоимость товара + фрахт
           </p>
         </div>
+
+        {onOpenLogisticsComparison && (
+          <button
+            type="button"
+            onClick={onOpenLogisticsComparison}
+            className="px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs self-start sm:self-center"
+          >
+            <Truck className="w-3.5 h-3.5 text-blue-600" />
+            <span>Сравнить ставки экспедиторов</span>
+            <ExternalLink className="w-3 h-3 text-blue-500" />
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -100,31 +122,35 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
             <span className="text-[10px] text-slate-400 self-center mr-1">Быстро:</span>
             <button
               type="button"
-              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 5800 })}
+              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 4550, inlandDeliveryRub: 453000, otherExpensesRub: 50000 })}
               className="text-[10px] bg-white border border-slate-300 hover:border-blue-400 rounded px-1.5 py-0.5 text-slate-600"
+              title="ИГЛ: Шанхай -> ВВО -> ЖД Москва -> Авто Серпухов ($4,550 + 453,000 ₽)"
             >
-              $5 800 (40HQ)
+              ИГЛ Серпухов ($4550)
             </button>
             <button
               type="button"
-              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 4500 })}
-              className="text-[10px] bg-white border border-slate-300 hover:border-blue-400 rounded px-1.5 py-0.5 text-slate-600"
+              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 7550, inlandDeliveryRub: 78000, otherExpensesRub: 62660 })}
+              className="text-[10px] bg-white border border-slate-300 hover:border-emerald-400 rounded px-1.5 py-0.5 text-slate-600"
+              title="Галеос: Deep Sea Новороссийск -> Авто Ставрополь ($7,550 + 140,660 ₽)"
             >
-              $4 500 (40HQ)
+              Галеос Ставрополь ($7550)
             </button>
             <button
               type="button"
-              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 3200 })}
-              className="text-[10px] bg-white border border-slate-300 hover:border-blue-400 rounded px-1.5 py-0.5 text-slate-600"
+              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 11250, inlandDeliveryRub: 78000, otherExpensesRub: 53000 })}
+              className="text-[10px] bg-white border border-slate-300 hover:border-amber-400 rounded px-1.5 py-0.5 text-slate-600"
+              title="Галеос: Прямой поезд -> Ворсино -> Серпухов ($11,250 + 131,000 ₽)"
             >
-              $3 200 (20GP)
+              Прямое ЖД ($11250)
             </button>
             <button
               type="button"
-              onClick={() => onChange({ ...logistics, freightCurrency: 'RUB', freightAmount: 475600 })}
-              className="text-[10px] bg-white border border-slate-300 hover:border-blue-400 rounded px-1.5 py-0.5 text-slate-600"
+              onClick={() => onChange({ ...logistics, freightCurrency: 'USD', freightAmount: 4700, inlandDeliveryRub: 492500, otherExpensesRub: 58000 })}
+              className="text-[10px] bg-white border border-slate-300 hover:border-indigo-400 rounded px-1.5 py-0.5 text-slate-600"
+              title="Дельпорте: ВВО -> Тимашевск -> Ставрополь ($4,700 + 550,500 ₽)"
             >
-              475 600 ₽
+              Дельпорте Ставр. ($4700)
             </button>
           </div>
         </div>

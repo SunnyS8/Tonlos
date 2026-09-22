@@ -315,6 +315,14 @@ export function formatMoney(amount: number, currency: 'RUB' | 'USD' | 'CNY' = 'R
   return `${formatted} ${symbolMap[currency]}`;
 }
 
+export function formatRub(amount: number, decimals = 0): string {
+  return formatMoney(amount, 'RUB', decimals);
+}
+
+export function formatUsd(amount: number, decimals = 0): string {
+  return formatMoney(amount, 'USD', decimals);
+}
+
 export function formatNumber(val: number, decimals = 2): string {
   return new Intl.NumberFormat('ru-RU', {
     minimumFractionDigits: decimals,

@@ -14,6 +14,9 @@ interface HeaderProps {
   onOpenPresetModal?: () => void;
   rates?: CurrencyRates;
   presets?: CalculationPreset[];
+  activeView?: 'ved' | 'logistics' | 'matrix';
+  onViewChange?: (view: 'ved' | 'logistics' | 'matrix') => void;
+  quotesCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,13 +29,16 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPresetModal,
   rates,
   presets = PRESETS,
+  activeView = 'ved',
+  onViewChange,
+  quotesCount = 9,
 }) => {
   const customPresets = presets.filter((p) => p.isCustom);
   const factoryPresets = presets.filter((p) => !p.isCustom);
 
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* Logo & Title */}
           <div className="flex items-center space-x-3">
@@ -49,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Расчет себестоимости под ключ по инвойсам, пошлинам (ТН ВЭД), НДС и логистике
+                ВЭД калькулятор + сравнение ставок экспедиторов (ИГЛ, Галеос, Дельпорте)
               </p>
             </div>
           </div>
@@ -149,6 +155,51 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Global Navigation View Switcher */}
+        {onViewChange && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => onViewChange('ved')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
+                activeView === 'ved'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>📊 Расчет партии и себестоимости (ВЭД)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onViewChange('logistics')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
+                activeView === 'logistics'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Ship className="w-3.5 h-3.5 text-blue-400" />
+              <span>Сравнение логистики и маршрутов</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-500/30 text-blue-300 font-mono">
+                {quotesCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onViewChange('matrix')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
+                activeView === 'matrix'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <span>⚡ Сравнить все варианты доставки</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
