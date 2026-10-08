@@ -7,12 +7,14 @@ interface CustomsTariffModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentCustomsValueRub: number;
+  onOpenTnvedModal?: () => void;
 }
 
 export const CustomsTariffModal: React.FC<CustomsTariffModalProps> = ({
   isOpen,
   onClose,
   currentCustomsValueRub,
+  onOpenTnvedModal,
 }) => {
   if (!isOpen) return null;
 
@@ -94,7 +96,19 @@ export const CustomsTariffModal: React.FC<CustomsTariffModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          {onOpenTnvedModal ? (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenTnvedModal();
+              }}
+              className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <span>Поиск кода ТН ВЭД по API →</span>
+            </button>
+          ) : <div />}
           <button
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"

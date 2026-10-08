@@ -27,6 +27,8 @@ import { LogisticsComparisonView } from './components/logistics/LogisticsCompari
 import { ExportLogisticsModal } from './components/logistics/ExportLogisticsModal';
 import { AddQuoteModal } from './components/logistics/AddQuoteModal';
 import { HelpManualModal } from './components/HelpManualModal';
+import { TnvedApiModal } from './components/TnvedApiModal';
+import { TnvedItem } from './types/tnved';
 import { PRESETS, CalculationPreset } from './data/presets';
 import { getAllPresetsList } from './utils/presetStorage';
 import { DEFAULT_FORWARDER_QUOTES } from './data/logisticsQuotes';
@@ -97,6 +99,18 @@ export default function App() {
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false);
+  const [isTnvedModalOpen, setIsTnvedModalOpen] = useState(false);
+
+  // Apply TNVED Code & Rate from API
+  const handleSelectTnvedItem = (item: TnvedItem) => {
+    setLogistics((prev) => ({
+      ...prev,
+      dutyRatePercent: item.dutyRatePercent,
+    }));
+    if (calcMode === 'batch') {
+      setBatchItem((b) => ({ ...b, hsCode: item.code }));
+    }
+  };
 
   // Active applied quote object
   const activeQuote = quotes.find((q) => q.id === activeQuoteId);
@@ -255,6 +269,7 @@ export default function App() {
         onOpenTariffModal={() => setIsTariffModalOpen(true)}
         onOpenRateModal={() => setIsRateModalOpen(true)}
         onOpenPresetModal={() => setIsPresetModalOpen(true)}
+        onOpenTnvedModal={() => setIsTnvedModalOpen(true)}
         rates={rates}
         presets={allPresets}
         activeView={activeMainView}
@@ -387,6 +402,7 @@ export default function App() {
               }
               onAddNewQuote={() => setIsAddQuoteModalOpen(true)}
               onUploadExcelQuotes={handleUploadExcelQuotes}
+              onOpenTnvedModal={() => setIsTnvedModalOpen(true)}
             />
 
             {/* Calculation Summary & Unit Economics */}
@@ -395,6 +411,9 @@ export default function App() {
               isSpecMode={calcMode === 'spec'}
               vatRatePercent={vatRatePercent}
               rates={rates}
+              hsCode={calcMode === 'batch' ? batchItem.hsCode : '7604210000'}
+              dutyRatePercent={logistics.dutyRatePercent}
+              onOpenTnvedModal={() => setIsTnvedModalOpen(true)}
             />
 
             {/* Informative Customs & Logistics Guide */}
@@ -463,6 +482,7 @@ export default function App() {
         isOpen={isTariffModalOpen}
         onClose={() => setIsTariffModalOpen(false)}
         currentCustomsValueRub={calculationResult.customsValueRub}
+        onOpenTnvedModal={() => setIsTnvedModalOpen(true)}
       />
 
       <ExportReportModal
@@ -524,6 +544,18 @@ export default function App() {
       <HelpManualModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
+      />
+
+      <TnvedApiModal
+        isOpen={isTnvedModalOpen}
+        onClose={() => setIsTnvedModalOpen(false)}
+        currentCode={calcMode === 'batch' ? batchItem.hsCode : '7604210000'}
+        currentDutyRate={logistics.dutyRatePercent}
+        onSelectCode={handleSelectTnvedItem}
+        invoiceRub={calculationResult.invoiceTotalRub}
+        freightRub={calculationResult.freightRub}
+        insuranceRub={calculationResult.insuranceRub}
+        rates={rates}
       />
     </div>
   );

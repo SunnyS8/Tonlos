@@ -9,6 +9,9 @@ import {
   ExternalLink,
   Plus,
   Upload,
+  Search,
+  Database,
+  Sparkles,
 } from 'lucide-react';
 import { LogisticsCustomsSettings } from '../types';
 import { COMMON_HS_CODES } from '../data/customsTariffs';
@@ -26,6 +29,7 @@ interface LogisticsCustomsPanelProps {
   activeQuoteName?: string;
   onAddNewQuote?: () => void;
   onUploadExcelQuotes?: (file: File) => void;
+  onOpenTnvedModal?: () => void;
 }
 
 export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
@@ -41,6 +45,7 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
   activeQuoteName,
   onAddNewQuote,
   onUploadExcelQuotes,
+  onOpenTnvedModal,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +79,20 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          {onOpenTnvedModal && (
+            <button
+              type="button"
+              id="btn-open-tnved-api"
+              onClick={onOpenTnvedModal}
+              className="px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs"
+              title="Поиск кода ТН ВЭД и расчет пошлины через онлайн-базу ЕАЭС / API"
+            >
+              <Database className="w-3.5 h-3.5 text-indigo-600" />
+              <span>База ТН ВЭД (API)</span>
+              <Sparkles className="w-3 h-3 text-amber-500" />
+            </button>
+          )}
+
           {onUploadExcelQuotes && (
             <label
               className="px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
@@ -209,7 +228,17 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
               <Percent className="w-3.5 h-3.5 text-indigo-500" />
               Ставка пошлины (ТН ВЭД):
             </label>
-            <span className="text-xs font-bold text-indigo-700 font-mono">%</span>
+            {onOpenTnvedModal && (
+              <button
+                type="button"
+                onClick={onOpenTnvedModal}
+                className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded transition"
+                title="Подобрать код ТН ВЭД в официальной базе ЕАЭС через API"
+              >
+                <Search className="w-3 h-3 text-indigo-500" />
+                <span>Подтянуть по API</span>
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -227,7 +256,29 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
               }
               className="w-full text-lg font-bold text-slate-900 bg-white border border-slate-300 rounded-md px-3 py-1.5 focus:outline-blue-500"
             />
+            <span className="text-sm font-bold text-indigo-700 font-mono px-2 py-1 bg-indigo-50 rounded border border-indigo-200">%</span>
           </div>
+
+          {/* Active HS Code Info & API modal trigger */}
+          {activeHsCode && (
+            <div className="mt-2 p-1.5 bg-blue-50/80 rounded border border-blue-200/80 flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="font-mono font-bold text-blue-900">{activeHsCode}</span>
+                <span className="text-blue-700 truncate">
+                  ({logistics.dutyRatePercent}%)
+                </span>
+              </div>
+              {onOpenTnvedModal && (
+                <button
+                  type="button"
+                  onClick={onOpenTnvedModal}
+                  className="text-blue-600 hover:text-blue-800 underline font-semibold shrink-0 ml-1"
+                >
+                  Изменить по API
+                </button>
+              )}
+            </div>
+          )}
 
           {/* HS Codes quick selector */}
           <div className="mt-2">
@@ -243,7 +294,7 @@ export const LogisticsCustomsPanel: React.FC<LogisticsCustomsPanelProps> = ({
               }}
               className="w-full text-[11px] bg-white border border-slate-300 text-slate-700 rounded px-2 py-1 truncate focus:outline-blue-500"
             >
-              <option value="">Выбрать код ТН ВЭД из документов...</option>
+              <option value="">Выбрать код ТН ВЭД из справочника...</option>
               {COMMON_HS_CODES.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.code} ({c.duty}%) — {c.name.substring(0, 32)}...

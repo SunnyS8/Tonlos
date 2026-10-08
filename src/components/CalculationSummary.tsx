@@ -18,6 +18,9 @@ interface CalculationSummaryProps {
   isSpecMode: boolean;
   vatRatePercent: number;
   rates?: CurrencyRates;
+  hsCode?: string;
+  dutyRatePercent?: number;
+  onOpenTnvedModal?: () => void;
 }
 
 export const CalculationSummary: React.FC<CalculationSummaryProps> = ({
@@ -25,6 +28,9 @@ export const CalculationSummary: React.FC<CalculationSummaryProps> = ({
   isSpecMode,
   vatRatePercent,
   rates,
+  hsCode,
+  dutyRatePercent,
+  onOpenTnvedModal,
 }) => {
   const hasSavings = result.savingsTotalRub !== undefined && result.savingsTotalRub > 0;
 
@@ -335,8 +341,32 @@ export const CalculationSummary: React.FC<CalculationSummaryProps> = ({
           {/* Row 5: Customs Duty */}
           <div className="px-5 py-2.5 flex items-center justify-between hover:bg-slate-50/70">
             <div>
-              <span className="font-semibold text-slate-900">5. Таможенная пошлина</span>
-              <p className="text-[11px] text-slate-500">От таможенной стоимости по ставке ТН ВЭД</p>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-900">5. Таможенная пошлина</span>
+                {dutyRatePercent !== undefined && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {dutyRatePercent}%
+                  </span>
+                )}
+                {hsCode && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono text-slate-600 bg-slate-100">
+                    ТН ВЭД {hsCode}
+                  </span>
+                )}
+                {onOpenTnvedModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenTnvedModal}
+                    className="text-[10px] text-blue-600 hover:text-blue-800 underline font-medium"
+                    title="Проверить ставку и код в базе ТН ВЭД по API"
+                  >
+                    API базы ТН ВЭД
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Начисляется от таможенной стоимости ({formatMoney(result.customsValueRub, 'RUB', 0)})
+              </p>
             </div>
             <div className="text-right font-mono font-semibold text-slate-900">
               {formatMoney(result.customsDutyRub, 'RUB', 2)}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ship, FileSpreadsheet, RotateCcw, Printer, Calendar, Plus, Sliders } from 'lucide-react';
+import { Ship, FileSpreadsheet, RotateCcw, Printer, Calendar, Plus, Sliders, Search } from 'lucide-react';
 import { PRESETS, CalculationPreset } from '../data/presets';
 import { CurrencyRates } from '../types';
 import { formatYMDToRu } from '../utils/cbrService';
@@ -12,6 +12,7 @@ interface HeaderProps {
   onOpenTariffModal: () => void;
   onOpenRateModal?: () => void;
   onOpenPresetModal?: () => void;
+  onOpenTnvedModal?: () => void;
   rates?: CurrencyRates;
   presets?: CalculationPreset[];
   activeView?: 'ved' | 'logistics' | 'matrix';
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTariffModal,
   onOpenRateModal,
   onOpenPresetModal,
+  onOpenTnvedModal,
   rates,
   presets = PRESETS,
   activeView = 'ved',
@@ -121,6 +123,19 @@ export const Header: React.FC<HeaderProps> = ({
                     ? `Курс на ${formatYMDToRu(rates.rateDate)}`
                     : 'Курс на дату'}
                 </span>
+              </button>
+            )}
+
+            {/* TNVED API button */}
+            {onOpenTnvedModal && (
+              <button
+                id="btn-header-tnved"
+                onClick={onOpenTnvedModal}
+                className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-900/60 rounded-lg transition-colors flex items-center gap-1.5"
+                title="Поиск кодов ТН ВЭД ЕАЭС и расчет пошлины по API"
+              >
+                <Search className="w-3.5 h-3.5 text-indigo-400" />
+                <span>ТН ВЭД (API)</span>
               </button>
             )}
 
